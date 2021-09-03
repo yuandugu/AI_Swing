@@ -1,12 +1,9 @@
 import numpy as np
-np.random.seed(1337)
 import math
 import time
 import h5py
 import matplotlib.pyplot as plt
 import tensorflow as tf
-SEED=20000
-tf.random.set_seed(seed=SEED)
 from tensorflow.keras.optimizer import Adam
 from tensorflow.keras.losses import SparseCategoricalCrossentropy, BinaryCrossentropy, CategoricalCrossentropy
 from tensorflow.keras.metrics import SparseCategoricalAccuracy, Accuracy, BinaryAccuracy, CategoricalAccuracy
@@ -24,16 +21,11 @@ import os
 N             = 39                     # number of node
 omega_s       = 100 * math.pi          # synchronous angular frequency
 baseMVA       = 10**8                  # power reference value
-if N == 14:
-    M         = 6800                   # mass moments of inertia, 6800 for 14, 12000 for 118
-elif N == 39:
-    M         = 50000
-elif N == 118:
-    M         = 12000
-alpha         = 0.1                    # damping
+M         = 50000
+alpha         = 0.6                    # damping
 theta         = math.pi                # range of theta_0
 omega         = 20                    # range of omega_0
-exp_num = 81
+exp_num = 1
 
 early_stop = True
 interval = False
@@ -51,20 +43,10 @@ oversample = True
 n_critical = 10000
 
 if interval == True:
-    if N == 14:
-        timelength = 100
-    elif N == 39:
-        timelength = 50
-    elif N == 118:
-        timelength = 100
+    timelength = 50
 
 else:
-    if N == 14:
-        timelength = 400
-    elif N == 39:
-        timelength = 100           # 原始数据的时间长度
-    elif N == 118:
-        timelength = 100
+    timelength = 100
 net = 'GCN'
 data_set = 'one'
 adj_mode      = 2                       # 邻接矩阵模式：1、adj=Y
@@ -74,14 +56,10 @@ print('adj_mode=%s' %(adj_mode))
 chosedlength  =  20                     # length used to train
 TEST_SIZE     =  0.2                    # train:val_test = 6:2:2
 CHANNEL       =  1                      # only use omega data to train
-
-if net == 'GCN' or 'RGCN' or 'RGCN-TCN' or 'RGCN-TCN_2':
-    learning_rate = 1e-3                    # Learning rate for Adam
-elif net == 'GAT' or 'RGAT':
-    learning_rate = 5e-3
+learning_rate = 1e-3                    # Learning rate for Adam
 BATCH_SIZE    = 256                     # Batch size
 epochs        = 1000                    # Number of training epochs
-patience      = 200                       # Patience for early stopping
+patience      = 200                     # Patience for early stopping
 
 #####################  load data & processing  ####################
 
@@ -532,7 +510,7 @@ print("AUC : ", auc)
 """
 保存数据
 """
-f = h5py.File('histroy.h5', 'w')
+f = h5py.File('./result/%s/histroy.h5' %(exp_num), 'w')
 f.create_dataset('train_history', data=HISTORY)
 f.create_dataset('test_loss', data=loss)
 f.create_dataset('test_accuracy', data=accuracy)
@@ -543,4 +521,4 @@ f.create_dataset('test_AUC', data=auc)
 f.create_dataset('pre', data=Y_predict)
 f.close()
 
-model.save('my_model.h5')
+model.save('./result/%s/my_model.h5' %(exp_num))

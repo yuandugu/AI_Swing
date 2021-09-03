@@ -16,38 +16,25 @@ import h5py
 N = 39                           # number of node
 omega_s = 100 * math.pi          # synchronous angular frequency
 baseMVA = 10**8                  # power reference value
-if N == 14:
-    M = 6800
-elif N == 39:
-    M = 50000
-elif N == 118:
-    M = 12000                   # mass moments of inertia, 6800 for 14, 50000 for 39, 12000 for 118
-alpha = 0.1                      # damping
+M = 50000                        # mass moments of inertia                  
+alpha = 0.6                      # damping
 theta = math.pi                  # range of theta_0
 omega = 20                       # range of omega_0
-l = 20                           # dividing number of initial condition state
 step = 0.05                      # time step to solve ODE
 max_t = 120                      # maximum time to sove ODE
 t = np.arange(0, max_t, step)    # time stream to solve ODE
 data_number = 1000               # samping number
 interval = False
 if interval == True:
-    if N == 14:
-        cut_out_num = 100
-    elif N == 39:
-        cut_out_num = 50                # collect data number, 100 for 14, 50 for 39
+    cut_out_num = 50                # collect data number, 100 for 14, 50 for 39
 else:
-    if N == 14:
-        cut_out_num = 400
-    elif N == 39:
-        cut_out_num = 100
+    cut_out_num = 100
 
 def dmove(t, y, sets):
     """
     定义ODE
     """
     X = np.zeros((N * 2))
-    # 0-13 is the dtheta, 14-27 is the domega
     for i in range(N):
         X[i] = y[i + N]
         a = 0
@@ -57,13 +44,7 @@ def dmove(t, y, sets):
     return X
 
 def load_para():
-    """
-    从.xlsx文件中导出参数及初始条件
-    """
-    #  parameter = xlrd.open_workbook('/home/duguyuan/Documents/Swing_in_Grid/IEEE/case%s/parameter/parameter.xlsx' %(N))
-    #  parameter = xlrd.open_workbook('/home/hpc0282014030/spy/parameter/parameter%s.xlsx' %(N))
-    parameter = xlrd.open_workbook('/public/home/spy2018/swing/parameter/parameter%s.xlsx' %(N))
-    #  parameter = xlrd.open_workbook('F:/Swing/parameter/case%s/parameter.xlsx' % (N))
+    parameter = xlrd.open_workbook('/parameter/parameter%s.xlsx' %(N))
     # 功率矩阵
     P_sheet1 = parameter.sheet_by_index(0)
     nrows = P_sheet1.nrows
@@ -119,21 +100,15 @@ def solve_one_ODE_updated(i):
     elif N == 39:
         length = 1000
     names = locals()
-    if N == 14:
-        a = np.array([ 0.03588299, -0.06105624, -0.20931958, -0.16787398, -0.13939053, -0.25496969,
-                    -0.23562615, -0.23731321, -0.26914548, -0.2758164,  -0.27045174, -0.27830865,
-                    -0.28178378, -0.30140728, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.
-                    ])  # IEEE-14的同步状态
-    elif N == 39:
-        a = np.array([-0.24219997, -0.16992011, -0.21896319, -0.22769395, -0.20274313, -0.18877805,
-                    -0.23072831, -0.24088105, -0.25411382, -0.14792818, -0.16214242, -0.16401846,
-                    -0.16169114, -0.1933527,  -0.20324505, -0.17720979, -0.19711253, -0.21354782,
-                    -0.08796499, -0.11204258, -0.13237097, -0.04721098, -0.05117464, -0.1747437,
-                    -0.14210796, -0.16254737, -0.20094919, -0.09408921, -0.04086045, -0.12485783,
-                    -0.021106,   -0.01778558,  0.00184892, -0.02056255,  0.04571267,  0.10145837,
-                    -0.01671788,  0.08897803, -0.26130884, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                    0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                    0., 0., 0., 0., 0., 0., 0., 0., 0.]) # IEEE-39的同步状态
+    a = np.array([-0.24219997, -0.16992011, -0.21896319, -0.22769395, -0.20274313, -0.18877805,
+                -0.23072831, -0.24088105, -0.25411382, -0.14792818, -0.16214242, -0.16401846,
+                -0.16169114, -0.1933527,  -0.20324505, -0.17720979, -0.19711253, -0.21354782,
+                -0.08796499, -0.11204258, -0.13237097, -0.04721098, -0.05117464, -0.1747437,
+                -0.14210796, -0.16254737, -0.20094919, -0.09408921, -0.04086045, -0.12485783,
+                -0.021106,   -0.01778558,  0.00184892, -0.02056255,  0.04571267,  0.10145837,
+                -0.01671788,  0.08897803, -0.26130884, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0., 0., 0., 0., 0., 0.]) # IEEE-39的同步状态
     names['init_'+str(i)] = generate_uniform_init_array(Initial=a, init_num=data_number, node_num=i+1) # 第i+1个节点的初始条件
     S = []
     data_theta = np.zeros((data_number, cut_out_num * N))
@@ -160,11 +135,9 @@ def solve_one_ODE_updated(i):
         del names['result' + str(i) + str(j)], init
         print('第(%s,%s)个ODE计算结束' % (i+1, j+1))
     if interval == True:
-        # f = h5py.File('/public/home/spy2018/swing/result/IEEE/case%s/omega=%s/change_two_node_long/2000/%s_%s.h5' %(N, omega, i+1, j+1), 'w')
-        f = h5py.File('/public/home/spy2018/swing/result/IEEE/case%s/omega==%s/change_one_node_long/%s/%s.h5' % (N, omega, length, i+1), 'w')
+        f = h5py.File('/one/%s.h5' % (i+1), 'w')
     else:
-        # f = h5py.File('/public/home/spy2018/swing/result/IEEE/case%s/omega=%s/change_two_node_long/2000_no_interval/%s_%s.h5' %(N, omega, i+1, j+1), 'w')
-        f = h5py.File('/public/home/spy2018/swing/result/IEEE/case%s/omega==%s/change_one_node_long/%s_no_interval/%s.h5' % (N, omega, length, i+1), 'w')        
+        f = h5py.File('/one/%s.h5' % (i+1), 'w')        
     f.create_dataset('data_theta', data=data_theta)
     f.create_dataset('data_omega', data=data_omega)
     f.create_dataset('Y', data=np.array(S))
@@ -212,9 +185,6 @@ def bigjobMPI_one_updated():
         solve_one_ODE_updated(a_piece_of_work)
 
 if __name__=="__main__": 
-    
-    # # parameter space to explore
-    # I = 8
     
     PY, initial = load_para()
     bigjobMPI_one_updated()
